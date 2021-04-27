@@ -64,7 +64,7 @@ DOA = zeros(1,P*2);
 for n = 1 : P*2
      DOA(n) = asin((angle(rts(n))*lambda)/(2*pi*d))*180/pi;
 end
-Built_in_Root_MUSIC = DOA
+Root_MUSIC = DOA
 
 
 
