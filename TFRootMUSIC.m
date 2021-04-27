@@ -27,67 +27,6 @@ S = S + awgn(S,SNR);            %Insert Gaussian white noise
 Rx = S*S';                      %Data covariance matrix
 Rxx = S*S'/(Samples);           %Data covariance matrix
 
-Built_in_Root_MUSIC = rootmusicdoa(Rxx,P)  % Built-in Root MUSIC algorithm results
-
-%% Root-MUSIC Algorithm
-J = flip(eye(M));         % Exchange matrix
-Ry = J*conj(Rx)*J;
-R = Rx + Ry;
-[vv,~]  = eig(R);         % Find the eigenvalues and eigenvectors of STFD
-NN   = vv(:,P+1:M);       % Estimate/Selection of noise subspac
-
-En = NN*NN';    
-b = zeros(2*(M - 1), 1);
-for i = -(M-1):1:M-1
-    b(i+M) = sum(diag(En, i));
-end
-b = flipud(b);
-rts = roots(b);
-distance = 1 - abs(rts);
-
-for ii = 1: length(distance)
-    for jj = 2 : ii
-       if(abs(distance(jj-1))>=abs(distance(jj)))
-         temp1 = distance(jj-1);
-         temp2 = rts(jj-1);
-         distance(jj-1) = distance(jj);
-         distance(jj) = temp1; 
-         rts(jj-1) = rts(jj);
-         rts(jj) = temp2;        
-       end
-    end
-end
-DOA = zeros(1,length(f_init)*2);
-for n = 1 : length(f_init)*2
-     DOA(n) = asin((angle(rts(n))*lambda)/(2*pi*d))*180/pi;
-end
-Root_MUSIC = DOA
-%figure;zplane(rts)  
-%title('1st signal')
-
-%% classical MUSIC
-[N,V] = eig(Rx);   %Find the eigenvalues and eigenvectors of R
-NN = N(:,1:M-P);          %Estimate noise subspace
-theta = -90:0.5:90;       %Peak search
-for ii = 1:length(theta)
-    SS = zeros(1,length(M));
-    for jj = 0 : M-1
-        SS(1+jj) = exp(-j*2*jj*pi*d*sin(theta(ii)/180*pi)/lambda);
-    end
-    PP = (SS*NN)*(NN'*SS');
-    PMUSIC(ii) = abs(1/PP);
-end
-PMUSIC = 10*log10(PMUSIC/max(PMUSIC)); %Spatial spectrum function
-plot(theta,PMUSIC,'LineWidth',1.5)
-xlim([-90 90])
-%ylim([-50 1])
-xlabel('DoA angle, \theta ','FontSize',14)
-ylabel('P, dB','FontSize',14)
-title('MUSIC Algorithm with White Noise','FontSize',16)
-grid on
-grid minor
-toc
-
 %% Multisensor Time-Frequency Distribution (MTFD)
         D = cell(M,M);
         for i = 1:M
@@ -194,28 +133,6 @@ end
 TF_Root_MUSIC = DOA_TF
 %figure;zplane(rts)J = flip(eye(M));         %Exchange matrix
 Ry = J*conj(D_s)*J; 
-
-%% TF-MUSIC Algorithm
-
-theta   = theta/180*pi;
-theta_N = length(theta);
-[ee,~]  = eig(D_s);        % Find the eigenvalues and eigenvectors of STFD
-UN_TF   = ee(:,P+1:M);    % Estimate/Selection of noise subspace
-
-P = zeros(1,theta_N);
-for ii = 1:theta_N
-    a_theta = exp(-1j*2*pi*(d/lambda)*sin(theta(ii))*(0:M-1));
-    PP_TF   = (a_theta*UN_TF)*(UN_TF'*a_theta');
-    P(ii)   = abs(1/PP_TF);
-end
-PTFMUSIC = 10*log10( P/max(P));
-figure
-plot(theta/pi*180,PTFMUSIC,'LineWidth',1.5)
-xlabel('DoA angle, \theta ','FontSize',14)
-ylabel('P, dB','FontSize',14)
-title('TF-MUSIC Algorithm','FontSize',16)
-grid on
-grid minor
 
 
 %%
